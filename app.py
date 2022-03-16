@@ -21,6 +21,7 @@ import plotly.io as pio
 from zipfile import ZipFile
 import base64
 import os
+import heroku3
 from urllib.parse import quote as urlquote
 from flask import Flask, send_from_directory, send_file
 
