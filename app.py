@@ -647,8 +647,15 @@ def print_images(clickData, option_picked):
     if option_picked is None:
         return 0
 
-    for i in range(1, len(option_picked) + 1):
-        source.append(get_images(window_number, option_picked[graph_number]))
+    # for i in range(1, len(option_picked) + 1):
+    #     source.append(get_images(window_number, option_picked[graph_number]))
+    print('option picked: {}'.format(option_picked))
+    print('option picked with graph: {}'.format(option_picked[graph_number]))
+
+    # option_picked[graph_number] this is just number of picked graph, its return name of file
+
+    for i in option_picked:
+        source.append(get_images(window_number, i))
 
     children = [parse_contents(encode_image(imgs), number) for number, imgs in enumerate(source)]
     return children
