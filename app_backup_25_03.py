@@ -62,7 +62,6 @@ PAPER_BGCOLOR = "#1e1e1e"
 GRAPH_LINES_COLOR = '#636363'
 LEFT_MENU_COLOR = '#2b2b2b'
 YELLOW_FONT_COLOR = '#efb636'
-LEFT_MENU_TEXT_COLOR = '#657895'
 
 TEXT_STYLE = {'fontSize': text_font_size,
               'paddingRight': '30px',
@@ -74,7 +73,7 @@ DROPDOWN_STYLE = {'marginTop': '15px',
                   'marginLeft': '30px',
                   'marginBottom': '10px',
                   'font-size': left_menu_font_size,
-                  'color': LEFT_MENU_TEXT_COLOR}
+                  'color': '#657895'}
 
 RADIOITEMS_STYLE = {'marginTop': '10px',
                     'marginLeft': '30px',
@@ -85,7 +84,7 @@ CHECKLIST_STYLE = {'marginTop': '15px',
                    'marginLeft': '30px',
                    'marginBottom': '10px',
                    'font-size': left_menu_font_size,
-                   'color': LEFT_MENU_TEXT_COLOR,
+                   'color': '#657895',
                    'max-height': '150px',
                    'overflow': 'auto'}
 
@@ -391,11 +390,15 @@ app.layout = html.Div(children=[
                             'color': YELLOW_FONT_COLOR
                         })
             ],
+                className='col-8',
                 style={'padding-top': '12%'}
             )
         ],
+
             style={'height': '4%',
                    'background-color': LEFT_MENU_COLOR,
+                   'border': '0px solid black',
+                   'marginLeft': '10px'
                    }
         ),
         html.Div([
@@ -418,27 +421,17 @@ app.layout = html.Div(children=[
                         },
                         multiple=True,
                     ),
+                    html.Div(id='callback-output'),
                     dcc.Link(html.Button(id='Refresh',
                                          n_clicks=0,
                                          children='Refresh',
                                          style={'marginTop': '10px',
                                                 'marginLeft': '0px',
-                                                'color': LEFT_MENU_TEXT_COLOR,
+                                                'color': '#657895',
                                                 'border': '1px solid {}'.format(GRAPH_LINES_COLOR),
                                                 'background': LEFT_MENU_COLOR
                                                 }
                                          ), refresh=True, href='/'),
-
-                    # dcc.Link(html.Button(id='Reset_data',
-                    #                      n_clicks=0,
-                    #                      children='Reset data',
-                    #                      style={'marginTop': '10px',
-                    #                             'marginLeft': '5px',
-                    #                             'color': LEFT_MENU_TEXT_COLOR,
-                    #                             'border': '1px solid {}'.format(GRAPH_LINES_COLOR),
-                    #                             'background': LEFT_MENU_COLOR
-                    #                             }
-                    #                      ), refresh=True, href='/'),
                 ],
                 style={
                     'textAlign': 'center',
@@ -447,13 +440,12 @@ app.layout = html.Div(children=[
                     'display': 'inline-block'
                 }),
             html.H4("Uploaded file:", style=TEXT_STYLE),
-
             html.Ul(id="file-list"),
             html.H4('Choose option:', style=TEXT_STYLE),
 
-            # Option picker after uploading files
             dcc.Checklist(
                 id='option_picker',
+                # value = def_option,
                 options=get_all_options(),
                 labelStyle={'display': 'block'},
                 style=CHECKLIST_STYLE
@@ -462,7 +454,6 @@ app.layout = html.Div(children=[
             html.H4('Choose variable:',
                     style=TEXT_STYLE),
 
-            # Choose variable for plot X axis
             dcc.RadioItems(
                 id='variable_picker',
                 labelStyle={'display': 'block'},
@@ -474,7 +465,6 @@ app.layout = html.Div(children=[
             html.H4('Sort by:',
                     style=TEXT_STYLE),
 
-            # Choose variable to sort by
             dcc.RadioItems(
                 id='sortby_picker',
                 labelStyle={'display': 'block'},
@@ -497,9 +487,13 @@ app.layout = html.Div(children=[
             }),
 
     ], style={'display': 'inline-block',
+              'verticalAlign': 'top',
               'width': '21%',
+              'marginLeft': '0px',
+              'marginTop': '0px',
+              'border': '0px solid black',
               'height': '900px',
-              'color': LEFT_MENU_TEXT_COLOR,
+              'color': '#657895',
               'white-space': 'nowrap',
               'text-overflow': 'ellipsis',
               'background-color': LEFT_MENU_COLOR
@@ -589,15 +583,11 @@ def option_refresh(value):
      Input('option_picker', 'value')]
 )
 def display_hover(hoverData, option_picked):
-
-    # If no hoverData or option was not picked, there is nothing to display
     if hoverData is None:
         return False, no_update, no_update
     if option_picked is None:
         return False, no_update, no_update
 
-    # If there is hoverData, return two variables, window_number as a 'x' value, which is just number of
-    # window from graph, graph_number as a "curveNumber" which is number of displayed graph.
     if hoverData:
         window_number = hoverData['points'][0]['x']
         graph_number = hoverData['points'][0]['curveNumber']
@@ -605,7 +595,6 @@ def display_hover(hoverData, option_picked):
         window_number = 'W120'
         graph_number = '0'
 
-    # Get images based on picked window number and graph number
     source = get_images(window_number, option_picked[graph_number])
     bbox = hoverData['points'][0]['bbox']
 
@@ -643,29 +632,32 @@ def bar_plot_collapse(n, is_open):
 
 
 # CREATING IMAGES
-# based on clicked value on graph
 @app.callback(Output('images', 'children'),
               [Input('my_graph', 'clickData'),
                Input('option_picker', 'value')])
 def print_images(clickData, option_picked):
-    # Get window numeber of clicked point on graph
     if clickData:
         window_number = clickData['points'][0]['x']
+        graph_number = clickData['points'][0]['curveNumber']
     else:
         window_number = 'W120'
+        graph_number = 0
 
     source = []
     if option_picked is None:
         return 0
 
-    # For every picked option, append source list with window images, based on every option
+    # for i in range(1, len(option_picked) + 1):
+    #     source.append(get_images(window_number, option_picked[graph_number]))
+    print('option picked: {}'.format(option_picked))
+    print('option picked with graph: {}'.format(option_picked[graph_number]))
+
+    # option_picked[graph_number] this is just number of picked graph, its return name of file
+
     for i in option_picked:
         source.append(get_images(window_number, i))
 
-    # To display images, update Div from layout, to make it easier firstly parse content based on
-    # 'source' list of images
     children = [parse_contents(encode_image(imgs), number) for number, imgs in enumerate(source)]
-
     return children
 
 
@@ -678,11 +670,9 @@ def print_images(clickData, option_picked):
 def graph_update(option, sort_by, variable, clickData):
     global path_all
 
-    # Return default_graph() if there is no option picked
     if option is None or len(option) == 0:
         return default_graph()
 
-    # Get titles based on picked options
     titles = [str(op).split('_')[1] for op in option]
 
     if clickData:
@@ -690,23 +680,22 @@ def graph_update(option, sort_by, variable, clickData):
     else:
         clicked = '0'
 
-    # Create as many subplots as there are different graphs
     fig = make_subplots(rows=len(option),
-                        cols=1,
-                        subplot_titles=titles,
+                        cols=1, subplot_titles=titles,
                         shared_xaxes=False)
 
-    # For every single option and create dataFrame base on CSV data
     for i in range(1, len(option) + 1):
 
         df = pd.read_csv(r"{}\{}".format(path_all, option[i - 1]), index_col=False)
 
-        # Create new column with window number as int value
-        df['Window_int'] = df['Window Ref'].apply(lambda x: int(str(x)[1:]))
+        if sort_by == 'Window Ref':
 
-        # Sort values based on picked sort option, if 'Window Ref' is picked, sort by
-        # 'windows int' to sort numerically not alphabetically
-        df.sort_values(sort_by if sort_by != 'Window Ref' else 'Window_int', inplace= True)
+            df['Window_int'] = df['Window Ref']
+            df['Window_int'] = df['Window_int'].apply(lambda x: int(str(x)[1:]))
+
+            df.sort_values('Window_int', inplace=True)
+        else:
+            df.sort_values(sort_by, inplace=True)
 
         df['Size'] = 12
         df['Opacity'] = 0.6
@@ -848,4 +837,4 @@ def open_files():
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False)
