@@ -15,3 +15,11 @@ Elements of dashboard:
 4. Clicked plot data- after selecting point from graph, window will be displayed as a static visualisation near plot, allowing to check differences between selected projects.
 
 Github repository contains "Example_data" folder, that could be upload to dashboard.
+
+Used tools and technologies:
+- Dash,
+- Plotly,
+- Bootstrap components,
+- Flask,
+- Heroku,
+- Pandas
