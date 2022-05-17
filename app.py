@@ -1,9 +1,6 @@
 # VSC Analysis project Jacek Karnowka
 # Creating requirements.txt:  pip freeze > requirements.txt
 # -----------------------
-# TO DO:
-# Talk with Wojtek about text, meaning of Red, soft Red, Green and soft Green
-# Add dash/ plotly logo
 
 # Import libraries
 import shutil
@@ -427,16 +424,6 @@ app.layout = html.Div(children=[
                                                 }
                                          ), refresh=True, href='/'),
 
-                    # dcc.Link(html.Button(id='Reset_data',
-                    #                      n_clicks=0,
-                    #                      children='Reset data',
-                    #                      style={'marginTop': '10px',
-                    #                             'marginLeft': '5px',
-                    #                             'color': LEFT_MENU_TEXT_COLOR,
-                    #                             'border': '1px solid {}'.format(GRAPH_LINES_COLOR),
-                    #                             'background': LEFT_MENU_COLOR
-                    #                             }
-                    #                      ), refresh=True, href='/'),
                 ],
                 style={
                     'textAlign': 'center',
