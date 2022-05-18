@@ -19,10 +19,8 @@ import os
 from urllib.parse import quote as urlquote
 from flask import Flask, send_from_directory, send_file
 
-# Import files
 import Styles
-import Dash_app_layout
-
+import Dash_app_layout 
 # Define global variables
 global main_project_name
 global project_number
@@ -334,7 +332,15 @@ def default_graph():
 
 
 # Clear directory
+# Run Flask server
+# Create dash app, based on external stylesheets and Flask server
 clear_directory(UPLOAD_DIRECTORY)
+
+server = Flask(__name__)
+
+app = dash.Dash(
+    "VSC-analysis", external_stylesheets=[dbc.themes.BOOTSTRAP], server=server
+)
 
 
 # Define route for downloading files
@@ -346,6 +352,7 @@ def download(path):
 
 # Main app layout, get from Dash_app_layout
 app.layout = Dash_app_layout.get_layout()
+
 
 
 @app.callback(
@@ -648,5 +655,5 @@ def open_files():
         return None
 
 
-# if __name__ == "__main__":
+#if __name__ == "__main__":
 #    app.run_server(debug=True)
