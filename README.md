@@ -36,9 +36,9 @@ Github repository contains "Example_data" folder, that could be upload to dashbo
 
 #### Upload example data
 1. Download example data folder: `https://github.com/JacekKarnowka/VSC_Analysis/tree/master/Example_Data`.
-2. On running app click on "Select file to upload", and select .zip folder from downloaded data.
+2. On running app click on `Select file to upload`, and select .zip folder from downloaded data.
 3. After uploading data click refresh button.
-4. Choose desire project from "Choose option".
+4. Choose desire project from `Choose option`.
 
 #### Video belows shows example app usage.
 
