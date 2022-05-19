@@ -401,8 +401,6 @@ def open_files():
 clear_directory(UPLOAD_DIRECTORY)
 
 
-
-
 # Define route for downloading files
 @run_app.server.route("/download1/<path:path>")
 def download(path):
