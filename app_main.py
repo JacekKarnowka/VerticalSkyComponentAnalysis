@@ -20,7 +20,9 @@ from urllib.parse import quote as urlquote
 from flask import Flask, send_from_directory, send_file
 
 import Styles
-import Dash_app_layout 
+import Dash_app_layout
+import run_app
+
 # Define global variables
 global main_project_name
 global project_number
@@ -104,6 +106,7 @@ def get_all_options():
         {"label": str(files[i]).split("_")[1], "value": files[i]}
         for i in range(1, len(files))
     ]
+
     return all_options
 
 
@@ -116,7 +119,12 @@ def bar_chart_figure():
     # Get all options
     # Look for titles in bar_all_options which are generally return values of get_all_options()
     bar_all_options = get_all_options()
-    titles = [str(op).split("_")[1] for op in bar_all_options]
+
+    try:
+        titles = [str(op).split("_")[1] for op in bar_all_options]
+    except IndexError:
+        raise TypeError("Wrong files names")
+
     color_names = COLOR_NAMES
     column_names = ["Option", "Green", "Soft Green", "Soft Red", "Red"]
 
@@ -125,17 +133,21 @@ def bar_chart_figure():
     df_all["Option"] = titles
     choices = COLOR_RGB
 
-    # Get all options and for each option assign a color -> color_range (function)
-    for i in range(1, len(bar_all_options) + 1):
-        df = pd.read_csv(
-            r"{}\{}".format(path_all, bar_all_options[i - 1]["value"]), index_col=False
-        )
-        df = color_range(df)
-
-        for tmp in range(0, len(color_names)):
-            df_all.loc[df_all["Option"] == titles[i - 1], color_names[tmp]] = len(
-                df[df.Color == choices[tmp]]
+    try:
+        # Get all options and for each option assign a color -> color_range (function)
+        for i in range(1, len(bar_all_options) + 1):
+            df = pd.read_csv(
+                r"{}\{}".format(path_all, bar_all_options[i - 1]["value"]),
+                index_col=False,
             )
+            df = color_range(df)
+
+            for tmp in range(0, len(color_names)):
+                df_all.loc[df_all["Option"] == titles[i - 1], color_names[tmp]] = len(
+                    df[df.Color == choices[tmp]]
+                )
+    except TypeError:
+        raise TypeError("CSV files do not exist in path")
 
     # Create traces of barplot
     traces = []
@@ -185,13 +197,16 @@ def bar_chart_figure():
 # Color range choice based on condition.
 # Created for bar plot
 def color_range(df):
-    conditions = [
-        (df["Scenario2/Scenario1"] <= 0.5),
-        (df["Scenario2/Scenario1"] > 0.5) & (df["Scenario2/Scenario1"] <= 0.7),
-        (df["Scenario2/Scenario1"] > 0.7) & (df["Scenario2/Scenario1"] <= 0.8),
-        (df["Scenario2/Scenario1"] > 0.8),
-    ]
-    choices = COLOR_RGB[::-1]
+    try:
+        conditions = [
+            (df["Scenario2/Scenario1"] <= 0.5),
+            (df["Scenario2/Scenario1"] > 0.5) & (df["Scenario2/Scenario1"] <= 0.7),
+            (df["Scenario2/Scenario1"] > 0.7) & (df["Scenario2/Scenario1"] <= 0.8),
+            (df["Scenario2/Scenario1"] > 0.8),
+        ]
+        choices = COLOR_RGB[::-1]
+    except TypeError:
+        raise TypeError("String value in Scenario2/Scenarion1 column")
 
     # Creating column with proper color
     df["Color"] = np.select(conditions, choices)
@@ -330,32 +345,76 @@ def default_graph():
     )
     return fig
 
+def save_file(name, content):
+    """Decode and store a file uploaded with Plotly Dash."""
+    data = content.encode("utf8").split(b";base64,")[1]
+    with open(os.path.join(UPLOAD_DIRECTORY, name), "wb") as fp:
+        fp.write(base64.decodebytes(data))
+
+
+def uploaded_files():
+    """List the files in the upload directory."""
+    files = []
+    for filename in os.listdir(UPLOAD_DIRECTORY):
+        path = os.path.join(UPLOAD_DIRECTORY, filename)
+        if os.path.isfile(path):
+            files.append(filename)
+    return files
+
+
+def file_download_link(filename):
+    """Create a Plotly Dash 'A' element that downloads a file from the app."""
+    location = "/download1/{}".format(urlquote(filename))
+    return html.A(filename, href=location)
+
+
+def open_files():
+    global img_base_path
+    global path_all
+    global main_project_name
+    global project_number
+    global all_options
+    global def_option
+
+    if os.path.isfile("{}/Data.zip".format(UPLOAD_DIRECTORY)):
+        open_zip("{}/Data.zip".format(UPLOAD_DIRECTORY))
+        main_project_name = os.listdir(
+            "{}/Data/Data".format(urlquote(UPLOAD_DIRECTORY))
+        )
+
+        project_number = str(main_project_name[0]).split("-")[1]
+
+        img_base_path = r"{}/Data/Data/{}/Results".format(
+            urlquote(UPLOAD_DIRECTORY), main_project_name[0]
+        )
+        path_all = r"{}/Data/Data/{}/{}-3d-VSC-APSH-template_Waldram/Reports".format(
+            urlquote(UPLOAD_DIRECTORY), main_project_name[0], project_number
+        )
+        all_options = get_all_options()
+        def_option = all_options[0]
+    else:
+        return None
 
 # Clear directory
 # Run Flask server
 # Create dash app, based on external stylesheets and Flask server
 clear_directory(UPLOAD_DIRECTORY)
 
-server = Flask(__name__)
 
-app = dash.Dash(
-    "VSC-analysis", external_stylesheets=[dbc.themes.BOOTSTRAP], server=server
-)
 
 
 # Define route for downloading files
-@server.route("/download1/<path:path>")
+@run_app.server.route("/download1/<path:path>")
 def download(path):
     """Serve a file from the upload directory."""
     return send_from_directory(UPLOAD_DIRECTORY, path, as_attachment=True)
 
 
 # Main app layout, get from Dash_app_layout
-app.layout = Dash_app_layout.get_layout()
+run_app.app.layout = Dash_app_layout.get_layout()
 
 
-
-@app.callback(
+@run_app.app.callback(
     Output("option_picker", "options"),
     Output("Bar_chart", "figure"),
     [Input("Refresh", "n_clicks")],
@@ -365,7 +424,7 @@ def option_refresh(value):
     return get_all_options(), bar_chart_figure()
 
 
-@app.callback(
+@run_app.app.callback(
     Output("graph-tooltip", "show"),
     Output("graph-tooltip", "bbox"),
     Output("graph-tooltip", "children"),
@@ -413,7 +472,7 @@ def display_hover(hoverData, option_picked):
     return True, bbox, children
 
 
-@app.callback(
+@run_app.app.callback(
     Output("collapse2", "is_open"),
     [Input("plot_picker", "value")],
     [State("collapse2", "is_open")],
@@ -429,7 +488,7 @@ def bar_plot_collapse(n, is_open):
 
 # CREATING IMAGES
 # based on clicked value on graph
-@app.callback(
+@run_app.app.callback(
     Output("images", "children"),
     [Input("my_graph", "clickData"), Input("option_picker", "value")],
 )
@@ -458,7 +517,7 @@ def print_images(clickData, option_picked):
 
 
 # CREATE GRAPH
-@app.callback(
+@run_app.app.callback(
     Output("my_graph", "figure"),
     [
         Input("option_picker", "value"),
@@ -574,7 +633,7 @@ def graph_update(option, sort_by, variable, clickData):
     return fig
 
 
-@server.route("/")
+@run_app.server.route("/")
 def download1(path):
     """Serve a file from the upload directory."""
     print(os.listdir("{}".format(UPLOAD_DIRECTORY)))
@@ -584,31 +643,7 @@ def download1(path):
     print(full)
     return send_file(full, path, as_attachment=True)
 
-
-def save_file(name, content):
-    """Decode and store a file uploaded with Plotly Dash."""
-    data = content.encode("utf8").split(b";base64,")[1]
-    with open(os.path.join(UPLOAD_DIRECTORY, name), "wb") as fp:
-        fp.write(base64.decodebytes(data))
-
-
-def uploaded_files():
-    """List the files in the upload directory."""
-    files = []
-    for filename in os.listdir(UPLOAD_DIRECTORY):
-        path = os.path.join(UPLOAD_DIRECTORY, filename)
-        if os.path.isfile(path):
-            files.append(filename)
-    return files
-
-
-def file_download_link(filename):
-    """Create a Plotly Dash 'A' element that downloads a file from the app."""
-    location = "/download1/{}".format(urlquote(filename))
-    return html.A(filename, href=location)
-
-
-@app.callback(
+@run_app.app.callback(
     Output("file-list", "children"),
     [Input("upload-data", "filename"), Input("upload-data", "contents")],
 )
@@ -627,33 +662,7 @@ def update_output(uploaded_filenames, uploaded_file_contents):
         return [html.Li(file_download_link(filename)) for filename in files]
 
 
-def open_files():
-    global img_base_path
-    global path_all
-    global main_project_name
-    global project_number
-    global all_options
-    global def_option
-
-    if os.path.isfile("{}/Data.zip".format(UPLOAD_DIRECTORY)):
-        open_zip("{}/Data.zip".format(UPLOAD_DIRECTORY))
-        main_project_name = os.listdir(
-            "{}/Data/Data".format(urlquote(UPLOAD_DIRECTORY))
-        )
-
-        project_number = str(main_project_name[0]).split("-")[1]
-
-        img_base_path = r"{}/Data/Data/{}/Results".format(
-            urlquote(UPLOAD_DIRECTORY), main_project_name[0]
-        )
-        path_all = r"{}/Data/Data/{}/{}-3d-VSC-APSH-template_Waldram/Reports".format(
-            urlquote(UPLOAD_DIRECTORY), main_project_name[0], project_number
-        )
-        all_options = get_all_options()
-        def_option = all_options[0]
-    else:
-        return None
 
 
-#if __name__ == "__main__":
+# if __name__ == "__main__":
 #    app.run_server(debug=True)
