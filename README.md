@@ -24,8 +24,7 @@ Github repository contains "Example_data" folder, that could be upload to dashbo
 - Plotly,
 - Bootstrap components,
 - Flask,
-- Heroku,
-- Pandas
+- Pandas.
 
 #### Installation
 1. Clone this repository: `git clone https://github.com/JacekKarnowka/VSC_Analysis.git`.
